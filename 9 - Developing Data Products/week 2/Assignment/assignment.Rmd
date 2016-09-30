@@ -1,0 +1,44 @@
+---
+title: "Assignment -- week 2"
+author: "Shang Ju"
+date: "September 30, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaflet)
+```
+
+## Awesome Restaurants Around my Office
+
+Created using package `leaflet`
+
+Click the markers and their links to see the restaurants' websites!
+
+```{r leaflet map, echo=FALSE, comment=""}
+restaurants <- data.frame(
+    name = c('Grill on the Rock',"El Famous Burrito","Fuji Thai","Wooil",'Chipotle','Oishii Thai'),
+    lat = c(42.158191,42.142688,42.170402,42.155805,42.182045,42.171738),
+    lng = c(-87.917278,-87.935050,-87.950158,-87.915767,-87.929091,-87.948181),
+    col = c('green','red','blue','green','red','blue')
+)
+
+sites <- c(
+    "<a href='http://grillontherock.com/#grill_on_the_rock.php'>Grill on the Rock</a>",
+    "<a href='http://www.elfamousburrito.com/'>El Famous Burrito</a>",
+    "<a href='http://www.fujisushithai.com/Menu.html'>Fuji Thai</a>",
+    "<a href='http://wooilbbq.com/'>Wooil Restaurant</a>", 
+    "<a href='http://www.chipotle.com/'>Chipotle</a>",
+    "<a href='http://www.oishiithaibuffalogrove.com/'>Oishii Thai</a>"
+
+)
+
+restaurants %>%
+    leaflet() %>%
+    addTiles() %>%
+    addCircleMarkers(lat = ~lat, lng = ~lng, popup = sites, color = ~col) %>%
+    addLegend(labels = c('Korean','Mexican','Thai'), colors = c('green','red','blue'))
+    
+```
+
