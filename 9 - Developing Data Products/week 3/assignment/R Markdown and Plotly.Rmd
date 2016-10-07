@@ -1,0 +1,30 @@
+---
+title: "Assignment - R Markdown & Plotly"
+author: "Shang Ju"
+date: "October 6, 2016"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(plotly)
+options(warnings=-1)
+set.seed(123)
+```
+
+## MPG (Miles-per-Gallon) in City vs Number of Cylinders
+
+
+```{r plotly, echo = FALSE, comment='', message = FALSE}
+attach(mpg)
+plot_ly(mpg,y = cty, type = 'box', color = as.factor(cyl)) %>%
+    layout(width = 700, height = 400,xaxis = list(title = '# cylinders'), yaxis = list(title = 'mpg in city'))
+```
+
+Source Dataframe: "mpg"
+
+
+## Conclusion
+
+**Negative correlation** between MPG and number of Cylinders, which aligns with common sense.
+
