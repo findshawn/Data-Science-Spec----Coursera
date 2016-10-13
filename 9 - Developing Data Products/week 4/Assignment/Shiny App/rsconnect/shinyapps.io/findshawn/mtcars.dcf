@@ -1,0 +1,9 @@
+name: mtcars
+account: findshawn
+server: shinyapps.io
+appId: 130843
+bundleId: 584821
+url: https://findshawn.shinyapps.io/mtcars/
+when: 1476297794.83732
+asMultiple: FALSE
+asStatic: FALSE

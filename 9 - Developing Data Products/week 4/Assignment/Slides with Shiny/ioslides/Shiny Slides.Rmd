@@ -1,0 +1,68 @@
+---
+title: "Vehicle Performance by Number of Cylinders"
+author: "Shang Ju"
+date: "October 12, 2016"
+output: ioslides_presentation
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## What is this presentation about?
+
+This R Markdown presentation is made interactive using Shiny. The viewers of the presentation can change the assumptions underlying what's presented and see the results immediately. 
+
+We used the build-in dataset "mtcars" in R as example. The goal is to examine the relationship between the vehicles' performance (horsepower, fuel efficiency, acceleration) and numbers of cylinders they have.
+
+## Instructions on the Interactive Plot
+
+- Select the number of cylinders from 4,6,8, and the graph will show you the vehicles accordingly.
+
+- Light blue color represents fast cars and dark blue represents slow cars.
+
+- Horizontal axis shows the fuel efficiency in miles-per-gallon. Vertical axis shows horsepower (how strong the engine is).
+
+## Interactive Plot
+
+```{r eruptions}
+library(shiny)
+library(ggplot2)
+
+sidebarLayout(
+    sidebarPanel(
+        selectInput(
+            inputId = "cyl", 
+            label = p("Number of Cylinders"), 
+            choices = sort(unique(mtcars$cyl))
+        )
+    ),
+    
+    # Show a plot of the generated distribution
+    mainPanel(
+        renderPlot({
+            mtcars$model <- row.names(mtcars)
+                
+            # plot of hp and fuel efficiency (mpg)
+            ggplot(data = subset(mtcars,cyl == input$cyl),aes(x = mpg, y = hp, label=model)) +
+                #geom_point(aes(size = wt,colour = qsec)) +
+                #geom_text(aes(label=model),hjust = 0, nudge_x = 0.05, check_overlap = TRUE) +
+                #scale_colour_gradient(low = 'cyan2',high = 'blue') +
+                #scale_size_area() +
+                labs(x = 'Miles per Gallon', y = 'Horsepower', colour = '1/4 mile time',size = 'Weight (1000 lbs)') +
+                theme(text = element_text(size=16)) +
+                geom_label(aes(fill = qsec,check_overlap = TRUE), colour = "white", fontface = "bold",vjust="inward",hjust="inward") +
+                scale_fill_gradient(high = 'blue',low = 'cyan2',name = "1/4 mile time (s)")
+        })
+    )
+)
+
+```
+
+## Conclusions
+
+As you select different values for the # of cylinders, you can see that the more cylinders a vehicle has, the higher horsepower it tends to have.
+
+Also notice that faster cars tend to have high horsepower, but not necessarily high miles-per-gallon. This is because faster cars (sport cars) tend to be lighter in weight, thus require less gasoline to accelerate.
+

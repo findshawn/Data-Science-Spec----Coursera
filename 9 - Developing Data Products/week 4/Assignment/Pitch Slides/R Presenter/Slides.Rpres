@@ -1,0 +1,49 @@
+Vehicle Performance by Number of Cylinders
+========================================================
+author: Shang Ju
+date: Oct 13, 2016
+autosize: true
+
+Hypotheses (Myths) about Cars
+========================================================
+
+1. More Cylinders    ==>      Fast Cars
+2. Fast Cars         ==>      High Fuel Consuption
+3. High Horsepower   ==>      Fast Cars
+
+We will do a simple test on the above hypotheses by analyzing the built-in R dataset "mtcars".
+
+
+Introduction of Source Data (datasets::mtcars)
+========================================================
+
+The data was extracted from the 1974 Motor Trend US magazine, and comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973-74 models).
+
+```{r}
+str(mtcars)
+```
+
+Conclusion in a Nutshell
+========================================================
+
+We found positive correlation between the number of cylinders and the horsepwer.
+
+We also found that faster cars tend to have high horsepower, but not necessarily high miles-per-gallon. This is probably because faster cars (sport cars) tend to be lighter in weight, thus require less gasoline to accelerate.
+
+
+Find the Answers Yourself!
+========================================================
+
+Go to [findshawn.shinyapps.io/mtcars](https://findshawn.shinyapps.io/mtcars) and play with the interactive graph yourself, and see if you can draw your own conclusions!
+
+```{r echo = FALSE, fig.width = 10, fig.height = 5}
+library(ggplot2)
+mtcars$model <- row.names(mtcars)
+ggplot(data = subset(mtcars,cyl == 4),aes(x = mpg, y = hp, label=model)) +
+    labs(x = 'Miles per Gallon', y = 'Horsepower', colour = '1/4 mile time',size = 'Weight (1000 lbs)') +
+    theme(text = element_text(size=16)) +
+    geom_label(aes(fill = qsec,check_overlap = TRUE), colour = "white", fontface = "bold",vjust="inward",hjust="inward") +
+    scale_fill_gradient(high = 'blue',low = 'cyan2',name = "1/4 mile time (s)")
+
+```
+
