@@ -1,9 +1,0 @@
-name: Shiny_Slides_mtcars
-account: findshawn
-server: shinyapps.io
-appId: 131413
-bundleId: 585030
-url: https://findshawn.shinyapps.io/Shiny_Slides_mtcars/
-when: 1476306036.12513
-asMultiple: FALSE
-asStatic: FALSE
