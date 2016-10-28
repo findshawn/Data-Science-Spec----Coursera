@@ -1,0 +1,229 @@
+---
+title: "<center>Predict Exercise Manner by Machine Learning Models</center>"
+author: "<center>Shang Ju</center>"
+date: "<center>October 27, 2016</center>"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+load('.rdata')
+```
+
+## Introduction
+
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did the exercise. 
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, I used data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <http://groupware.les.inf.puc-rio.br/har> (see the section on the Weight Lifting Exercise Dataset).
+
+## Data Source
+
+The training data for this project are available here:
+
+<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv>
+
+The test data are available here:
+
+<https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv>
+
+The original work can be found at: 
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013. 
+
+-----
+
+## Upload and Explore/Clean Data
+
+Read raw data:
+
+```{r eval=FALSE}
+pml_training <- read.csv('pml-training.csv')
+pml_testing <- read.csv('pml-testing.csv')
+```
+
+Explore training data:
+
+```{r}
+str(pml_training)
+```
+
+Training data has 160 variables, including the target variable `classe`:
+
+```{r}
+str(training$classe)
+```
+
+Explore the testing data:
+
+```{r}
+sum(complete.cases(pml_testing))
+```
+
+None of the observations in testing data has complete data of all 160 variables. Are all 159 predictors useful? After a deeper examination, it turns out that about only 53 predictors have some variation at all in the testing data set. So we can filter out the irrelevant variables in both testing and training data:
+
+```{r eval=FALSE}
+pml_testing2 <- pml_testing[,c(7:11,37:49,60:68,84:86,102,113:124,140,151:160)]
+pml_training2 <- pml_training[,c(7:11,37:49,60:68,84:86,102,113:124,140,151:160)]
+```
+
+Note that the testing data does not have the target vaiable `classe`, but `problem_id` instead:
+
+```{r}
+pml_testing2$classe
+names(pml_testing2)[length(names(pml_testing2))]
+```
+
+## Prepare Data for Modeling
+
+Load package `caret`:
+```{r}
+library(caret)
+```
+
+Set seed : (This step is important, making sure the result is reproducable) 
+```{r}
+set.seed(123)
+```
+
+Split training data into training and validation sets:
+```{r eval=FALSE}
+inTrain <- createDataPartition(y=pml_training2$classe,p=0.7,list=0)
+training <- pml_training2[inTrain,]
+validation <- pml_training2[-inTrain,]
+testing <- pml_testing2
+```
+
+The final dimension of training/validation/testing sets are:
+```{r}
+dim(training)
+dim(validation)
+dim(testing)
+```
+
+53 predictors are a lot. Putting all of them into any model would take consirable time. So we want to check the correlation between the variables and see if it's possible to use fewer varaibles for modeling.
+
+## Variable Correlation Exploration
+
+Correlation Matrix:
+```{r eval=FALSE}
+cor(training[,-ncol(training)])
+```
+
+Principle Component Analysis:
+```{r}
+pc <- preProcess(training[,-ncol(training)],method='pca')
+pc
+```
+
+It seems that PCA could be useful in modeling for this task.
+
+## Finally: Modeling
+
+First define a function `fit_pred()` to test the acuracy of each model using the validation set:
+```{r eval=FALSE}
+fit_pred <- function(fit,testSet = validation) {
+    pred = predict(fit,testSet);
+    confusionMatrix(pred,testSet[['classe']])
+}
+```
+
+Build different machine learning models and record the building time. Also in the comments part record the accuracy and kappa of each model after applying on the validation set:
+```{r eval=FALSE} 
+# knn (1081 s)
+system.time(fit_knn <- train(classe~.,data = training, method = 'knn'))
+fit_pred(fit_knn) # 0.92 0.90
+
+# knn with pca (239 s)
+system.time(fit_knn_pca <- train(classe~.,data = training, method = 'knn', preProcess='pca'))
+fit_pred(fit_knn_pca) # 0.95 0.94
+
+# glm (error)
+system.time(fit_glm_pca <- train(classe~.,data = training, method = 'glm', preProcess='pca'))
+
+# decision tree (26 s)
+system.time(fit_rpart_pca <- train(classe~.,data = training, method = 'rpart', preProcess='pca'))
+fit_pred(fit_rpart_pca) # 0.39 0.20
+
+# decision tree bagged (400 s ?)
+system.time(fit_treebag_pca <- train(classe~.,data = training, method = 'treebag', preProcess='pca'))
+fit_pred(fit_treebag_pca) # 0.96 0.94
+
+# random forest (2594 s)
+system.time(fit_rf_pca <- train(classe~.,data = training, method = 'rf', preProcess='pca'))
+fit_pred(fit_rf_pca) # 0.97 0.97
+
+# boosted tree (1188 s)
+system.time(fit_gbm_pca <- train(classe~.,data = training, method = 'gbm', preProcess='pca'))
+fit_pred(fit_gbm_pca) # 0.82 0.78
+
+# linear discriminant analysis (16 s)
+system.time(fit_lda_pca <- train(classe~.,data = training, method = 'lda', preProcess='pca'))
+fit_pred(fit_lda_pca) # 0.52 0.40
+
+# naive bayes (913 s)
+system.time(fit_nb_pca <- train(classe~.,data = training, method = 'nb', preProcess='pca'))
+fit_pred(fit_nb_pca) # 0.64 0.54
+
+# naive bayes bootstrap (509 s or 4802 s)
+train_control <- trainControl(method="boot", number=10)
+system.time(fit_nb_pca_boot <- train(classe~.,data = training, method = 'nb', preProcess='pca',trControl=train_control))
+fit_pred(fit_nb_pca_boot) # 0.64 0.54
+
+# naive bayes K fold cross validation
+train_control <- trainControl(method="cv", number=10)
+grid <- expand.grid(.fL=c(0), .usekernel=c(FALSE))
+system.time(fit_nb_pca_cv <- train(classe~.,data = training, method = 'nb', preProcess='pca',trControl=train_control,tuneGrid=grid))
+
+# naive bayes repeated K fold cross validation (452 s)
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+system.time(fit_nb_pca_cv_repeat <- train(classe~.,data = training, method = 'nb', preProcess='pca',trControl=train_control))
+fit_pred(fit_nb_pca_cv_repeat) # 0.64 0.54
+
+# Support Vector Machine with Linear Kernel (669 s)
+system.time(fit_svm_pca <- train(classe~.,data = training, method = 'svmLinear', preProcess='pca'))
+fit_pred(fit_svm_pca) # 0.58 0.47
+
+# Neural Network (1478 s)
+system.time(fit_nnet_pca <- train(classe~.,data = training, method = 'nnet', preProcess='pca'))
+fit_pred(fit_nnet_pca) # 0.60 0.50
+```
+
+Here's the summary of the efficiency/performance of different machine learning models: (Except for the first model 'knn', all others were trained using preProcess method 'pca')
+
+Model                              |  Method in caret  | Time to train | Accuracy | Kappa
+-----------------------------------|-------------------|---------------|----------|-------
+Nearest Neighbor (without PCA)     |    knn            |   1081 s      |   92%    |  0.90
+Nearest Neighbor                   |    knn            |    239 s      |   95%    |  0.94
+Generalized Linear Model           |    glm            |    error      |    -     |   - 
+Decision Tree                      |   rpart           |     26 s      |   39%    |  0.20
+Bagged Tree                        |    treebag        |    400 s      |   96%    |  0.94
+Random Forest                      |     rf            |   2594 s      |   97%    |  0.97
+Boosted Tree                       |     gbm           |   1188 s      |   82%    |  0.78
+Linear Discriminant Analysis       |    lda            |     16 s      |   52%    |  0.40
+Naive Bayes                        |     nb            |    913 s      |   64%    |  0.54
+Naive Bayes (with bootstap)        |     nb            |    509 s      |   64%    |  0.54
+Naive Bayes (repeated CV)          |     nb            |    452 s      |   64%    |  0.54
+Support Vector Machine (Linear Ke) |    svmLinear      |    669 s      |   58%    |  0.47
+Neural Network                     |    nnet           |   1478 s      |   60%    |  0.50
+
+## Model Comparison and Selection
+
+1. Model efficiency and performace vary considerably on this dataset. `Nearest Neighbor`, `Bagged Tree` and `Random Forest` are winners in terms of model accuracy.
+2. On the other hand, `Decision Tree` and `Linear Discriminant Analysis` run much faster than other models. 
+3. Finally, `Naive Bayes`,`Support Vector Machine` and `Neural Network` did not perform well on this dataset.
+
+Considering the performance and the size of the testing data (20), there's not much room to improve from model stacking. So we will continue to predict the testing data with the best performing model `Random Forest`. The expected accurary of perdicting the 20 cases in testing data should be 100% or 95% (1 case misclassified).
+
+## Applying Winner Model on the Testing Dataset
+
+Finally, we apply the trained random forest model on the testing data and below is our prediction of their class:
+
+```{r}
+predict(fit_rf_pca,testing)
+```
+
+
+
+

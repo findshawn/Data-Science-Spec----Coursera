@@ -40,10 +40,22 @@ testing = adData[-inTrain,]
 
 str(training)
 vars <- training[,grepl('^IL',names(training))]
-pc <- preProcess(vars,method='pca',thresh = 0.8)
+
+pc <- preProcess(vars,method='pca')
 pc
-pc2 <- prcomp(scale(vars))
-summary(pc2)
+pc$rotation
+
+pc2 <- preProcess(vars,method='pca',thresh = 0.8)
+pc2
+pc2$rotation
+
+pc3 <- prcomp(vars)
+pc3
+summary(pc3)
+
+pc4 <- prcomp(scale(vars))
+pc4
+summary(pc4)
 
 # Q5
 training2 <- data.frame(training$diagnosis,vars)
