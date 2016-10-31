@@ -121,7 +121,7 @@ Predict Exercise Manner by Machine Learning Models
 Shang Ju
 </center></em></h4>
 <h4 class="date"><em><center>
-October 27, 2016
+October 28, 2016
 </center></em></h4>
 
 </div>
@@ -147,7 +147,11 @@ October 27, 2016
 </div>
 <div id="upload-and-exploreclean-data" class="section level2">
 <h2>Upload and Explore/Clean Data</h2>
-<p>Read raw data:</p>
+<p>Load package <code>caret</code>:</p>
+<pre class="r"><code>library(caret)</code></pre>
+<p>Set seed: (An important step, making sure the result is reproducable)</p>
+<pre class="r"><code>set.seed(123)</code></pre>
+<p>Read downloaded raw data:</p>
 <pre class="r"><code>pml_training &lt;- read.csv('pml-training.csv')
 pml_testing &lt;- read.csv('pml-testing.csv')</code></pre>
 <p>Explore training data:</p>
@@ -253,16 +257,180 @@ pml_testing &lt;- read.csv('pml-testing.csv')</code></pre>
 ##  $ min_yaw_dumbbell        : Factor w/ 73 levels &quot;&quot;,&quot;-0.1&quot;,&quot;-0.2&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
 ##  $ amplitude_roll_dumbbell : num  NA NA NA NA NA NA NA NA NA NA ...
 ##   [list output truncated]</code></pre>
-<p>Training data has 160 variables, including the target variable <code>classe</code>:</p>
+<p>Training data has 160 variables, including the target variable <code>classe</code>, which has five different values:</p>
 <pre class="r"><code>str(training$classe)</code></pre>
 <pre><code>##  Factor w/ 5 levels &quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</code></pre>
 <p>Explore the testing data:</p>
 <pre class="r"><code>sum(complete.cases(pml_testing))</code></pre>
 <pre><code>## [1] 0</code></pre>
-<p>None of the observations in testing data has complete data of all 160 variables. Are all 159 predictors useful? After a deeper examination, it turns out that about only 53 predictors have some variation at all in the testing data set. So we can filter out the irrelevant variables in both testing and training data:</p>
+<p>None of the observations in testing data has complete data for all 160 variables. Are all 159 predictors useful at predicting the outcome <code>classe</code>? Let’s examine the variance of each variable:</p>
+<pre class="r"><code>nzv3 &lt;- nzv(pml_testing,saveMetrics = 1)
+nzv3</code></pre>
+<pre><code>##                          freqRatio percentUnique zeroVar   nzv
+## X                         1.000000           100   FALSE FALSE
+## user_name                 2.000000            30   FALSE FALSE
+## raw_timestamp_part_1      1.000000           100   FALSE FALSE
+## raw_timestamp_part_2      1.000000           100   FALSE FALSE
+## cvtd_timestamp            1.333333            55   FALSE FALSE
+## new_window                0.000000             5    TRUE  TRUE
+## num_window                1.000000           100   FALSE FALSE
+## roll_belt                 1.000000            90   FALSE FALSE
+## pitch_belt                1.000000           100   FALSE FALSE
+## yaw_belt                  1.000000            90   FALSE FALSE
+## total_accel_belt          1.200000            45   FALSE FALSE
+## kurtosis_roll_belt        0.000000             0    TRUE  TRUE
+## kurtosis_picth_belt       0.000000             0    TRUE  TRUE
+## kurtosis_yaw_belt         0.000000             0    TRUE  TRUE
+## skewness_roll_belt        0.000000             0    TRUE  TRUE
+## skewness_roll_belt.1      0.000000             0    TRUE  TRUE
+## skewness_yaw_belt         0.000000             0    TRUE  TRUE
+## max_roll_belt             0.000000             0    TRUE  TRUE
+## max_picth_belt            0.000000             0    TRUE  TRUE
+## max_yaw_belt              0.000000             0    TRUE  TRUE
+## min_roll_belt             0.000000             0    TRUE  TRUE
+## min_pitch_belt            0.000000             0    TRUE  TRUE
+## min_yaw_belt              0.000000             0    TRUE  TRUE
+## amplitude_roll_belt       0.000000             0    TRUE  TRUE
+## amplitude_pitch_belt      0.000000             0    TRUE  TRUE
+## amplitude_yaw_belt        0.000000             0    TRUE  TRUE
+## var_total_accel_belt      0.000000             0    TRUE  TRUE
+## avg_roll_belt             0.000000             0    TRUE  TRUE
+## stddev_roll_belt          0.000000             0    TRUE  TRUE
+## var_roll_belt             0.000000             0    TRUE  TRUE
+## avg_pitch_belt            0.000000             0    TRUE  TRUE
+## stddev_pitch_belt         0.000000             0    TRUE  TRUE
+## var_pitch_belt            0.000000             0    TRUE  TRUE
+## avg_yaw_belt              0.000000             0    TRUE  TRUE
+## stddev_yaw_belt           0.000000             0    TRUE  TRUE
+## var_yaw_belt              0.000000             0    TRUE  TRUE
+## gyros_belt_x              1.500000            70   FALSE FALSE
+## gyros_belt_y              2.250000            30   FALSE FALSE
+## gyros_belt_z              2.500000            65   FALSE FALSE
+## accel_belt_x              1.000000            85   FALSE FALSE
+## accel_belt_y              1.500000            75   FALSE FALSE
+## accel_belt_z              1.000000            85   FALSE FALSE
+## magnet_belt_x             1.000000           100   FALSE FALSE
+## magnet_belt_y             1.500000            80   FALSE FALSE
+## magnet_belt_z             1.500000            80   FALSE FALSE
+## roll_arm                  8.000000            65   FALSE FALSE
+## pitch_arm                 8.000000            65   FALSE FALSE
+## yaw_arm                   8.000000            65   FALSE FALSE
+## total_accel_arm           1.000000            85   FALSE FALSE
+## var_accel_arm             0.000000             0    TRUE  TRUE
+## avg_roll_arm              0.000000             0    TRUE  TRUE
+## stddev_roll_arm           0.000000             0    TRUE  TRUE
+## var_roll_arm              0.000000             0    TRUE  TRUE
+## avg_pitch_arm             0.000000             0    TRUE  TRUE
+## stddev_pitch_arm          0.000000             0    TRUE  TRUE
+## var_pitch_arm             0.000000             0    TRUE  TRUE
+## avg_yaw_arm               0.000000             0    TRUE  TRUE
+## stddev_yaw_arm            0.000000             0    TRUE  TRUE
+## var_yaw_arm               0.000000             0    TRUE  TRUE
+## gyros_arm_x               2.000000            95   FALSE FALSE
+## gyros_arm_y               2.000000            95   FALSE FALSE
+## gyros_arm_z               1.000000            90   FALSE FALSE
+## accel_arm_x               2.000000            95   FALSE FALSE
+## accel_arm_y               1.000000           100   FALSE FALSE
+## accel_arm_z               1.000000           100   FALSE FALSE
+## magnet_arm_x              1.000000           100   FALSE FALSE
+## magnet_arm_y              2.000000            95   FALSE FALSE
+## magnet_arm_z              1.000000           100   FALSE FALSE
+## kurtosis_roll_arm         0.000000             0    TRUE  TRUE
+## kurtosis_picth_arm        0.000000             0    TRUE  TRUE
+## kurtosis_yaw_arm          0.000000             0    TRUE  TRUE
+## skewness_roll_arm         0.000000             0    TRUE  TRUE
+## skewness_pitch_arm        0.000000             0    TRUE  TRUE
+## skewness_yaw_arm          0.000000             0    TRUE  TRUE
+## max_roll_arm              0.000000             0    TRUE  TRUE
+## max_picth_arm             0.000000             0    TRUE  TRUE
+## max_yaw_arm               0.000000             0    TRUE  TRUE
+## min_roll_arm              0.000000             0    TRUE  TRUE
+## min_pitch_arm             0.000000             0    TRUE  TRUE
+## min_yaw_arm               0.000000             0    TRUE  TRUE
+## amplitude_roll_arm        0.000000             0    TRUE  TRUE
+## amplitude_pitch_arm       0.000000             0    TRUE  TRUE
+## amplitude_yaw_arm         0.000000             0    TRUE  TRUE
+## roll_dumbbell             1.000000           100   FALSE FALSE
+## pitch_dumbbell            1.000000           100   FALSE FALSE
+## yaw_dumbbell              1.000000           100   FALSE FALSE
+## kurtosis_roll_dumbbell    0.000000             0    TRUE  TRUE
+## kurtosis_picth_dumbbell   0.000000             0    TRUE  TRUE
+## kurtosis_yaw_dumbbell     0.000000             0    TRUE  TRUE
+## skewness_roll_dumbbell    0.000000             0    TRUE  TRUE
+## skewness_pitch_dumbbell   0.000000             0    TRUE  TRUE
+## skewness_yaw_dumbbell     0.000000             0    TRUE  TRUE
+## max_roll_dumbbell         0.000000             0    TRUE  TRUE
+## max_picth_dumbbell        0.000000             0    TRUE  TRUE
+## max_yaw_dumbbell          0.000000             0    TRUE  TRUE
+## min_roll_dumbbell         0.000000             0    TRUE  TRUE
+## min_pitch_dumbbell        0.000000             0    TRUE  TRUE
+## min_yaw_dumbbell          0.000000             0    TRUE  TRUE
+## amplitude_roll_dumbbell   0.000000             0    TRUE  TRUE
+## amplitude_pitch_dumbbell  0.000000             0    TRUE  TRUE
+## amplitude_yaw_dumbbell    0.000000             0    TRUE  TRUE
+## total_accel_dumbbell      2.000000            70   FALSE FALSE
+## var_accel_dumbbell        0.000000             0    TRUE  TRUE
+## avg_roll_dumbbell         0.000000             0    TRUE  TRUE
+## stddev_roll_dumbbell      0.000000             0    TRUE  TRUE
+## var_roll_dumbbell         0.000000             0    TRUE  TRUE
+## avg_pitch_dumbbell        0.000000             0    TRUE  TRUE
+## stddev_pitch_dumbbell     0.000000             0    TRUE  TRUE
+## var_pitch_dumbbell        0.000000             0    TRUE  TRUE
+## avg_yaw_dumbbell          0.000000             0    TRUE  TRUE
+## stddev_yaw_dumbbell       0.000000             0    TRUE  TRUE
+## var_yaw_dumbbell          0.000000             0    TRUE  TRUE
+## gyros_dumbbell_x          1.000000            90   FALSE FALSE
+## gyros_dumbbell_y          1.000000            80   FALSE FALSE
+## gyros_dumbbell_z          4.000000            85   FALSE FALSE
+## accel_dumbbell_x          1.000000           100   FALSE FALSE
+## accel_dumbbell_y          3.000000            90   FALSE FALSE
+## accel_dumbbell_z          2.000000            95   FALSE FALSE
+## magnet_dumbbell_x         1.000000           100   FALSE FALSE
+## magnet_dumbbell_y         1.000000           100   FALSE FALSE
+## magnet_dumbbell_z         2.000000            95   FALSE FALSE
+## roll_forearm              2.000000            95   FALSE FALSE
+## pitch_forearm             1.000000           100   FALSE FALSE
+## yaw_forearm               1.000000           100   FALSE FALSE
+## kurtosis_roll_forearm     0.000000             0    TRUE  TRUE
+## kurtosis_picth_forearm    0.000000             0    TRUE  TRUE
+## kurtosis_yaw_forearm      0.000000             0    TRUE  TRUE
+## skewness_roll_forearm     0.000000             0    TRUE  TRUE
+## skewness_pitch_forearm    0.000000             0    TRUE  TRUE
+## skewness_yaw_forearm      0.000000             0    TRUE  TRUE
+## max_roll_forearm          0.000000             0    TRUE  TRUE
+## max_picth_forearm         0.000000             0    TRUE  TRUE
+## max_yaw_forearm           0.000000             0    TRUE  TRUE
+## min_roll_forearm          0.000000             0    TRUE  TRUE
+## min_pitch_forearm         0.000000             0    TRUE  TRUE
+## min_yaw_forearm           0.000000             0    TRUE  TRUE
+## amplitude_roll_forearm    0.000000             0    TRUE  TRUE
+## amplitude_pitch_forearm   0.000000             0    TRUE  TRUE
+## amplitude_yaw_forearm     0.000000             0    TRUE  TRUE
+## total_accel_forearm       1.500000            65   FALSE FALSE
+## var_accel_forearm         0.000000             0    TRUE  TRUE
+## avg_roll_forearm          0.000000             0    TRUE  TRUE
+## stddev_roll_forearm       0.000000             0    TRUE  TRUE
+## var_roll_forearm          0.000000             0    TRUE  TRUE
+## avg_pitch_forearm         0.000000             0    TRUE  TRUE
+## stddev_pitch_forearm      0.000000             0    TRUE  TRUE
+## var_pitch_forearm         0.000000             0    TRUE  TRUE
+## avg_yaw_forearm           0.000000             0    TRUE  TRUE
+## stddev_yaw_forearm        0.000000             0    TRUE  TRUE
+## var_yaw_forearm           0.000000             0    TRUE  TRUE
+## gyros_forearm_x           1.000000            90   FALSE FALSE
+## gyros_forearm_y           1.000000           100   FALSE FALSE
+## gyros_forearm_z           1.000000           100   FALSE FALSE
+## accel_forearm_x           1.000000           100   FALSE FALSE
+## accel_forearm_y           1.000000           100   FALSE FALSE
+## accel_forearm_z           1.000000           100   FALSE FALSE
+## magnet_forearm_x          1.000000           100   FALSE FALSE
+## magnet_forearm_y          1.000000           100   FALSE FALSE
+## magnet_forearm_z          1.000000           100   FALSE FALSE
+## problem_id                1.000000           100   FALSE FALSE</code></pre>
+<p>After a deeper examination, it turns out that only 53 predictors are relevant and have some variation at all in the testing data set. So we can filter out the irrelevant variables in both testing and training data:</p>
 <pre class="r"><code>pml_testing2 &lt;- pml_testing[,c(7:11,37:49,60:68,84:86,102,113:124,140,151:160)]
 pml_training2 &lt;- pml_training[,c(7:11,37:49,60:68,84:86,102,113:124,140,151:160)]</code></pre>
-<p>Note that the testing data does not have the target vaiable <code>classe</code>, but <code>problem_id</code> instead:</p>
+<p>Note that the testing data does not have the target vaiable <code>classe</code> as the last column, but <code>problem_id</code> instead:</p>
 <pre class="r"><code>pml_testing2$classe</code></pre>
 <pre><code>## NULL</code></pre>
 <pre class="r"><code>names(pml_testing2)[length(names(pml_testing2))]</code></pre>
@@ -270,23 +438,22 @@ pml_training2 &lt;- pml_training[,c(7:11,37:49,60:68,84:86,102,113:124,140,151:1
 </div>
 <div id="prepare-data-for-modeling" class="section level2">
 <h2>Prepare Data for Modeling</h2>
-<p>Load package <code>caret</code>:</p>
-<pre class="r"><code>library(caret)</code></pre>
-<p>Set seed : (This step is important, making sure the result is reproducable)</p>
-<pre class="r"><code>set.seed(123)</code></pre>
-<p>Split training data into training and validation sets:</p>
+<p>The training dataset has 19622 observations, 53 predictors, and 1 target variable:</p>
+<pre class="r"><code>dim(pml_training2)</code></pre>
+<pre><code>## [1] 19622    54</code></pre>
+<p><strong>Split</strong> training data <strong>70/30</strong> into <strong>training / validation</strong> sets:</p>
 <pre class="r"><code>inTrain &lt;- createDataPartition(y=pml_training2$classe,p=0.7,list=0)
 training &lt;- pml_training2[inTrain,]
 validation &lt;- pml_training2[-inTrain,]
 testing &lt;- pml_testing2</code></pre>
-<p>The final dimension of training/validation/testing sets are:</p>
+<p>The final dimensions of training/validation/testing sets are:</p>
 <pre class="r"><code>dim(training)</code></pre>
 <pre><code>## [1] 13737    54</code></pre>
 <pre class="r"><code>dim(validation)</code></pre>
 <pre><code>## [1] 5885   54</code></pre>
 <pre class="r"><code>dim(testing)</code></pre>
 <pre><code>## [1] 20 54</code></pre>
-<p>53 predictors are a lot. Putting all of them into any model would take consirable time. So we want to check the correlation between the variables and see if it’s possible to use fewer varaibles for modeling.</p>
+<p>Note 53 predictors are a lot. Putting all of them into any model would take consirable time to train. So we want to check the correlation between the variables and see if it’s possible to use fewer varaibles for modeling.</p>
 </div>
 <div id="variable-correlation-exploration" class="section level2">
 <h2>Variable Correlation Exploration</h2>
@@ -304,79 +471,97 @@ pc</code></pre>
 ##   - scaled (53)
 ## 
 ## PCA needed 25 components to capture 95 percent of the variance</code></pre>
-<p>It seems that PCA could be useful in modeling for this task.</p>
+<p>It seems that PCA could be helpful in modeling for this task.</p>
 </div>
 <div id="finally-modeling" class="section level2">
 <h2>Finally: Modeling</h2>
-<p>First define a function <code>fit_pred()</code> to test the acuracy of each model using the validation set:</p>
+<p>First define a function <strong>fit_pred()</strong> to test the accuracy of each model on the validation set:</p>
 <pre class="r"><code>fit_pred &lt;- function(fit,testSet = validation) {
     pred = predict(fit,testSet);
     confusionMatrix(pred,testSet[['classe']])
 }</code></pre>
-<p>Build different machine learning models and record the building time. Also in the comments part record the accuracy and kappa of each model after applying on the validation set:</p>
-<pre class="r"><code># knn (1081 s)
-system.time(fit_knn &lt;- train(classe~.,data = training, method = 'knn'))
+<p>Set seed again:</p>
+<pre class="r"><code>set.seed(123)</code></pre>
+<p>Set trainControl method to be <strong>cross-validation</strong> for all models:</p>
+<pre class="r"><code>ctrl &lt;- trainControl(method=&quot;cv&quot;, number=10)</code></pre>
+<p>Build different machine learning models and record the training <strong>time</strong> (bootstrapping / cross-validation). Also record the <strong>accuracy</strong> and <strong>kappa</strong> of each model after applying on the validation set:</p>
+<pre class="r"><code># knn (1081 s / 82 s)
+system.time(fit_knn &lt;- train(classe~.,data = training, method = 'knn', trControl=ctrl))
 fit_pred(fit_knn) # 0.92 0.90
+fit_knn
 
-# knn with pca (239 s)
-system.time(fit_knn_pca &lt;- train(classe~.,data = training, method = 'knn', preProcess='pca'))
+# knn with pca (239 s / 29 s)
+system.time(fit_knn_pca &lt;- train(classe~.,data = training, method = 'knn', preProcess='pca',trControl=ctrl))
 fit_pred(fit_knn_pca) # 0.95 0.94
+fit_knn_pca
 
-# glm (error)
+# glm (error, 2-class outcomes only)
 system.time(fit_glm_pca &lt;- train(classe~.,data = training, method = 'glm', preProcess='pca'))
 
-# decision tree (26 s)
-system.time(fit_rpart_pca &lt;- train(classe~.,data = training, method = 'rpart', preProcess='pca'))
+# decision tree (26 s / 11 s)
+system.time(fit_rpart_pca &lt;- train(classe~.,data = training, method = 'rpart', preProcess='pca', trControl=ctrl))
 fit_pred(fit_rpart_pca) # 0.39 0.20
+fit_rpart_pca
 
-# decision tree bagged (400 s ?)
-system.time(fit_treebag_pca &lt;- train(classe~.,data = training, method = 'treebag', preProcess='pca'))
+# decision tree bagged (400 s / 109 s)
+system.time(fit_treebag_pca &lt;- train(classe~.,data = training, method = 'treebag', preProcess='pca', trControl=ctrl))
 fit_pred(fit_treebag_pca) # 0.96 0.94
+fit_treebag_pca
 
-# random forest (2594 s)
-system.time(fit_rf_pca &lt;- train(classe~.,data = training, method = 'rf', preProcess='pca'))
+# random forest (2594 s / 838 s)
+system.time(fit_rf_pca &lt;- train(classe~.,data = training, method = 'rf', preProcess='pca', trControl=ctrl))
 fit_pred(fit_rf_pca) # 0.97 0.97
+fit_rf_pca
 
-# boosted tree (1188 s)
-system.time(fit_gbm_pca &lt;- train(classe~.,data = training, method = 'gbm', preProcess='pca'))
+# random forest cv 5 (383 s)
+system.time(fit_rf_pca_cv5 &lt;- train(classe~.,data = training, method = 'rf', preProcess='pca', trControl=trainControl(method='cv',number=5)))
+fit_pred(fit_rf_pca_cv5) # 0.97 0.97
+fit_rf_pca_cv5
+
+# boosted tree (1188 s / 407 s)
+system.time(fit_gbm_pca &lt;- train(classe~.,data = training, method = 'gbm', preProcess='pca',trControl=ctrl))
 fit_pred(fit_gbm_pca) # 0.82 0.78
+fit_gbm_pca
 
-# linear discriminant analysis (16 s)
-system.time(fit_lda_pca &lt;- train(classe~.,data = training, method = 'lda', preProcess='pca'))
+# linear discriminant analysis (16 s / 5 s)
+system.time(fit_lda_pca &lt;- train(classe~.,data = training, method = 'lda', preProcess='pca',trControl=ctrl))
 fit_pred(fit_lda_pca) # 0.52 0.40
+fit_lda_pca
 
-# naive bayes (913 s)
-system.time(fit_nb_pca &lt;- train(classe~.,data = training, method = 'nb', preProcess='pca'))
+# naive bayes (913 s / 98 s)
+system.time(fit_nb_pca &lt;- train(classe~.,data = training, method = 'nb', preProcess='pca',trControl=ctrl))
 fit_pred(fit_nb_pca) # 0.64 0.54
+fit_nb_pca
 
-# naive bayes bootstrap (509 s or 4802 s)
-train_control &lt;- trainControl(method=&quot;boot&quot;, number=10)
-system.time(fit_nb_pca_boot &lt;- train(classe~.,data = training, method = 'nb', preProcess='pca',trControl=train_control))
-fit_pred(fit_nb_pca_boot) # 0.64 0.54
-
-# naive bayes K fold cross validation
-train_control &lt;- trainControl(method=&quot;cv&quot;, number=10)
-grid &lt;- expand.grid(.fL=c(0), .usekernel=c(FALSE))
-system.time(fit_nb_pca_cv &lt;- train(classe~.,data = training, method = 'nb', preProcess='pca',trControl=train_control,tuneGrid=grid))
-
-# naive bayes repeated K fold cross validation (452 s)
+# naive bayes repeated 10 fold cross validation (452 s)
 train_control &lt;- trainControl(method=&quot;repeatedcv&quot;, number=10, repeats=3)
 system.time(fit_nb_pca_cv_repeat &lt;- train(classe~.,data = training, method = 'nb', preProcess='pca',trControl=train_control))
 fit_pred(fit_nb_pca_cv_repeat) # 0.64 0.54
+fit_nb_pca_cv_repeat
 
-# Support Vector Machine with Linear Kernel (669 s)
-system.time(fit_svm_pca &lt;- train(classe~.,data = training, method = 'svmLinear', preProcess='pca'))
+# Support Vector Machine with Linear Kernel (669 s / 221 s)
+system.time(fit_svm_pca &lt;- train(classe~.,data = training, method = 'svmLinear', preProcess='pca',trControl=ctrl))
 fit_pred(fit_svm_pca) # 0.58 0.47
+fit_svm_pca
 
-# Neural Network (1478 s)
-system.time(fit_nnet_pca &lt;- train(classe~.,data = training, method = 'nnet', preProcess='pca'))
-fit_pred(fit_nnet_pca) # 0.60 0.50</code></pre>
-<p>Here’s the summary of the efficiency/performance of different machine learning models: (Except for the first model ‘knn’, all others were trained using preProcess method ‘pca’)</p>
-<table style="width:126%;">
+# Support Vector Machine with Polynomial Kernel (7981 s)
+system.time(fit_svmpoly_pca &lt;- train(classe~.,data = training, method = 'svmPoly', preProcess='pca',trControl=ctrl))
+fit_pred(fit_svmpoly_pca) # 0.98 0.98
+fit_svmpoly_pca
+
+# Neural Network (1478 s / 363 s)
+system.time(fit_nnet_pca &lt;- train(classe~.,data = training, method = 'nnet', preProcess='pca',trControl=ctrl))
+fit_pred(fit_nnet_pca) # 0.60 0.50
+fit_nnet_pca</code></pre>
+<p>Here’s the summary of the efficiency/performance of different machine learning models: (Except for the first ‘knn’ model, all other models were trained using preProcess method ‘<strong>pca</strong>’)</p>
+</div>
+<div id="model-comparison-and-selection" class="section level2">
+<h2>Model Comparison and Selection</h2>
+<table style="width:133%;">
 <colgroup>
 <col width="50%"></col>
 <col width="27%"></col>
-<col width="22%"></col>
+<col width="29%"></col>
 <col width="15%"></col>
 <col width="11%"></col>
 </colgroup>
@@ -384,7 +569,7 @@ fit_pred(fit_nnet_pca) # 0.60 0.50</code></pre>
 <tr class="header">
 <th align="left">Model</th>
 <th align="left">Method in caret</th>
-<th align="left">Time to train</th>
+<th align="left">Time to train (CV)</th>
 <th align="left">Accuracy</th>
 <th align="left">Kappa</th>
 </tr>
@@ -393,112 +578,115 @@ fit_pred(fit_nnet_pca) # 0.60 0.50</code></pre>
 <tr class="odd">
 <td align="left">Nearest Neighbor (without PCA)</td>
 <td align="left">knn</td>
-<td align="left">1081 s</td>
+<td align="left">82 s</td>
 <td align="left">92%</td>
 <td align="left">0.90</td>
 </tr>
 <tr class="even">
 <td align="left">Nearest Neighbor</td>
 <td align="left">knn</td>
-<td align="left">239 s</td>
+<td align="left">29 s</td>
 <td align="left">95%</td>
 <td align="left">0.94</td>
 </tr>
 <tr class="odd">
-<td align="left">Generalized Linear Model</td>
-<td align="left">glm</td>
-<td align="left">error</td>
-<td align="left">-</td>
-<td align="left">-</td>
-</tr>
-<tr class="even">
 <td align="left">Decision Tree</td>
 <td align="left">rpart</td>
-<td align="left">26 s</td>
+<td align="left">11 s</td>
 <td align="left">39%</td>
 <td align="left">0.20</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">Bagged Tree</td>
 <td align="left">treebag</td>
-<td align="left">400 s</td>
+<td align="left">109 s</td>
 <td align="left">96%</td>
 <td align="left">0.94</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Random Forest</td>
 <td align="left">rf</td>
-<td align="left">2594 s</td>
+<td align="left">838 s</td>
+<td align="left">97%</td>
+<td align="left">0.97</td>
+</tr>
+<tr class="even">
+<td align="left">Random Forest (CV 5-fold)</td>
+<td align="left">rf</td>
+<td align="left">383 s</td>
 <td align="left">97%</td>
 <td align="left">0.97</td>
 </tr>
 <tr class="odd">
 <td align="left">Boosted Tree</td>
 <td align="left">gbm</td>
-<td align="left">1188 s</td>
+<td align="left">407 s</td>
 <td align="left">82%</td>
 <td align="left">0.78</td>
 </tr>
 <tr class="even">
 <td align="left">Linear Discriminant Analysis</td>
 <td align="left">lda</td>
-<td align="left">16 s</td>
+<td align="left">5 s</td>
 <td align="left">52%</td>
 <td align="left">0.40</td>
 </tr>
 <tr class="odd">
 <td align="left">Naive Bayes</td>
 <td align="left">nb</td>
-<td align="left">913 s</td>
+<td align="left">98 s</td>
 <td align="left">64%</td>
 <td align="left">0.54</td>
 </tr>
 <tr class="even">
-<td align="left">Naive Bayes (with bootstap)</td>
-<td align="left">nb</td>
-<td align="left">509 s</td>
-<td align="left">64%</td>
-<td align="left">0.54</td>
-</tr>
-<tr class="odd">
 <td align="left">Naive Bayes (repeated CV)</td>
 <td align="left">nb</td>
 <td align="left">452 s</td>
 <td align="left">64%</td>
 <td align="left">0.54</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Support Vector Machine (Linear Ke)</td>
 <td align="left">svmLinear</td>
-<td align="left">669 s</td>
+<td align="left">221 s</td>
 <td align="left">58%</td>
 <td align="left">0.47</td>
+</tr>
+<tr class="even">
+<td align="left">Support Vector Machine (Poly Ke)</td>
+<td align="left">svmPoly</td>
+<td align="left">7981 s</td>
+<td align="left">98%</td>
+<td align="left">0.98</td>
 </tr>
 <tr class="odd">
 <td align="left">Neural Network</td>
 <td align="left">nnet</td>
-<td align="left">1478 s</td>
+<td align="left">363 s</td>
 <td align="left">60%</td>
 <td align="left">0.50</td>
 </tr>
 </tbody>
 </table>
-</div>
-<div id="model-comparison-and-selection" class="section level2">
-<h2>Model Comparison and Selection</h2>
+<div id="model-comparison-summary" class="section level3">
+<h3>Model Comparison Summary</h3>
 <ol style="list-style-type: decimal">
-<li>Model efficiency and performace vary considerably on this dataset. <code>Nearest Neighbor</code>, <code>Bagged Tree</code> and <code>Random Forest</code> are winners in terms of model accuracy.</li>
-<li>On the other hand, <code>Decision Tree</code> and <code>Linear Discriminant Analysis</code> run much faster than other models.</li>
-<li>Finally, <code>Naive Bayes</code>,<code>Support Vector Machine</code> and <code>Neural Network</code> did not perform well on this dataset.</li>
+<li>Efficiency and performace vary considerably on this dataset across different models. <strong>‘Nearest Neighbor’</strong>, <strong>‘Bagged Tree’</strong>, <strong>‘Random Forest’</strong>, and <strong>‘Support Vector Machine with Polynomial Kernel’</strong> are winner models in terms of prediction accuracy. On the other hand, <strong>‘Decision Tree’</strong>,<strong>‘Naive Bayes’</strong>,<strong>‘Support Vector Machine with Linear Kernel’</strong> and <strong>‘Neural Network’</strong> did not predict accurately for this specific task.</li>
+<li>In terms of speed, <strong>‘Decision Tree’</strong> and <strong>‘Linear Discriminant Analysis’</strong> run much faster than other models.</li>
 </ol>
-<p>Considering the performance and the size of the testing data (20), there’s not much room to improve from model stacking. So we will continue to predict the testing data with the best performing model <code>Random Forest</code>. The expected accurary of perdicting the 20 cases in testing data should be 100% or 95% (1 case misclassified).</p>
 </div>
-<div id="applying-winner-model-on-the-testing-dataset" class="section level2">
-<h2>Applying Winner Model on the Testing Dataset</h2>
-<p>Finally, we apply the trained random forest model on the testing data and below is our prediction of their class:</p>
-<pre class="r"><code>predict(fit_rf_pca,testing)</code></pre>
-<pre><code>##  [1] B A A A A E D B A A B C B A E E A B B B
+<div id="model-selection" class="section level3">
+<h3>Model Selection</h3>
+<p>Considering the models’ accuracy and the size of the testing data (20), there’s not much more room to improve from model-stacking. So we will proceed to predict the testing data with the most accurate model <strong>‘Support Vector Machine with Polynomial Kernel’</strong>. The <strong>expected accurary</strong> of perdicting the 20 cases in testing data should be <strong>100% or 95% (1 case misclassified)</strong>.</p>
+</div>
+</div>
+<div id="apply-the-winner-model-on-the-testing-dataset" class="section level2">
+<h2>Apply the Winner Model on the Testing Dataset</h2>
+<p>Finally, we apply the Support Vector Machine model with Polynomial Kernel on the 20 observations in the testing data and below the prediction of their <code>classe</code>:</p>
+<pre class="r"><code>predict(fit_svmpoly_pca,testing)</code></pre>
+<pre><code>##  [1] B A C A A E D B A A B C B A E E A B B B
 ## Levels: A B C D E</code></pre>
+<p>And we achieved <strong>95% accuracy</strong> (19 of 20 cases correct).</p>
 </div>
 
 
