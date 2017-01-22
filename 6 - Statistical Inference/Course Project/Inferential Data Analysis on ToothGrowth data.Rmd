@@ -1,0 +1,72 @@
+---
+title: "Inferential Data Analysis on ToothGrowth Data"
+author: "Shang Ju"
+date: "January 22, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,out.width='100%', message = FALSE)
+```
+
+## Load the ToothGrowth Data
+```{r load data}
+library(datasets)
+data(ToothGrowth)
+```
+
+## ToothGrowth Dataset Overview
+
+The response is the length of odontoblasts (cells responsible for tooth growth) in 60 guinea pigs. Each animal received one of three dose levels of vitamin C (0.5, 1, and 2 mg/day) by one of two delivery methods, (orange juice or ascorbic acid (a form of vitamin C and coded as VC).
+
+## Summary
+```{r Summary}
+summary(ToothGrowth)
+```
+
+## Exploratory Data Analysis
+```{r No. Observations}
+table(ToothGrowth$supp,ToothGrowth$dose)
+```
+
+The dataset is comprised of 60 observations evenly distributed into 6 groups (2 supplements * 3 dose amount)
+
+```{r EDA}
+library(ggplot2)
+ggplot(data = ToothGrowth,aes(x=dose,y=len)) +
+    facet_grid(.~supp) +
+    geom_point()
+```
+
+From the graph we see that the more dose used, the longer the length of odontoblasts. However, the effectiveness between orange juice (OJ) and Vitamin C (VC) is not significantly different and need further statistical analysis.
+
+## Hypothesis Test 1: Tooth Length Affected by Delivery Method (OJ v.s. VC)
+
+```{r Hypothesis Test 1: supp}
+t.test(len~supp, data = ToothGrowth, var.equal=F)
+```
+
+Because p-value = 0.06 > 0.05, we can not reject the null hypothesis. So the difference between the effect on tooth growth by delivery methods (orange juice v.s. ascorbic acid) is **not statistically significant**.
+
+## Hypothesis Test 2: Tooth Length Affected by Dose Amount
+
+```{r Hypothesis Test 2: dose 0.5/1}
+t.test(len~dose, data = subset(ToothGrowth,dose %in% c(0.5,1)), var.equal=F)
+```
+
+p-value 1.3e-7 << 0.05: the effect on tooth growth by dose amount, 0.5 mg/day v.s. 1 mg/day, is significantly different.
+
+```{r Hypothesis Test 2: dose 1/2}
+t.test(len~dose, data = subset(ToothGrowth,dose %in% c(1,2)), var.equal=F)
+```
+
+p-value 1.9e-5 << 0.05: the effect on tooth growth by dose amount, 1 mg/day v.s. 2 mg/day, is significantly different.
+
+
+## Conclusions
+
+**Dose amount** affect tooth growth significantly: the higher the amount is (between 0.5 and 2 mg/day), the longer the tooth length.
+
+**Supplement Type (orange juice v.s. ascorbic acid)**, however, does **not** significantly affect tooth growth
+
+The conclusions are based on the assumptions that we take 5% as the significance level and that no other factors are affecting the experiment.
